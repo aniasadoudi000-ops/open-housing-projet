@@ -1,0 +1,41 @@
+name: CD
+
+# CD ne se déclenche que sur `main` (pas sur DEV_Schama) : la branche de dev
+# fait tourner la CI seule, `main` déclenche la publication de l'image.
+#
+# LIMITE ASSUMÉE (US-20/US-21) : ce workflow build + push l'image Docker vers
+# GitHub Container Registry (ghcr.io), taguée `v<run_number>` pour permettre
+# un rollback (US-21 : redéployer le tag précédent). Il ne va PAS jusqu'au
+# déploiement sur un hébergeur cloud réel (Render/Railway/AWS/etc.) car
+# aucun compte cloud ni secret d'accès n'a été fourni pour ce projet. Ajouter
+# une étape de déploiement ici dès que la cible d'hébergement est choisie.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:v${{ github.run_number }}
