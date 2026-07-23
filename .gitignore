@@ -19,3 +19,4 @@ htmlcov/
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 !models/.gitkeep
+*.egg-info/
