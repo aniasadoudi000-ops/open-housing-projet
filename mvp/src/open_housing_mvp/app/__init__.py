@@ -1,0 +1,1 @@
+"""Application du MVP."""

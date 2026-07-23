@@ -1,32 +1,42 @@
 # OpenHousing
 
-Projet de preuve de concept et MVP pour l'estimation de prix immobiliers à partir du dataset Boston Housing.
+Proof-of-concept and MVP project for estimating real estate prices from the Boston Housing dataset.
 
-## Objectif
+## Objective
 
-Ce projet vise à :
-- préparer les données via un pipeline ETL,
-- entraîner un modèle de régression,
-- exposer une API REST avec FastAPI,
-- empaqueter l'application en Docker,
-- préparer l'automatisation CI/CD et le déploiement cloud.
+This project aims to:
+- prepare data through an ETL pipeline,
+- train a regression model,
+- expose a REST API with FastAPI,
+- package the application in Docker,
+- prepare CI/CD automation and cloud deployment.
 
-## Architecture proposée
+## Proposed architecture
 
 ```text
 open-housing-projet/
-├── src/open_housing/
-│   ├── __init__.py
-│   ├── app/
-│   │   └── main.py
-│   ├── etl.py
-│   ├── train.py
-│   └── config.py
+├── poc/
+│   ├── README.md
+│   ├── src/open_housing_poc/
+│   │   ├── __init__.py
+│   │   ├── app/main.py
+│   │   ├── config.py
+│   │   ├── etl.py
+│   │   └── train.py
+│   └── tests/test_smoke.py
+├── mvp/
+│   ├── README.md
+│   ├── src/open_housing_mvp/
+│   │   ├── __init__.py
+│   │   ├── app/main.py
+│   │   ├── config.py
+│   │   ├── etl.py
+│   │   └── train.py
+│   └── tests/test_smoke.py
 ├── data/
 │   ├── raw/
 │   └── processed/
 ├── models/
-├── tests/
 ├── notebooks/
 ├── Dockerfile
 ├── docker-compose.yml
@@ -34,7 +44,13 @@ open-housing-projet/
 └── .github/workflows/ci.yml
 ```
 
-## Stack technique
+### POC / MVP separation
+
+- The [poc/README.md](poc/README.md) folder contains the proof-of-concept skeleton.
+- The [mvp/README.md](mvp/README.md) folder contains the product-version skeleton.
+- At the beginning, both subprojects share the same type of structure, but they are now separated so they can evolve independently.
+
+## Tech stack
 
 - Python 3.11+
 - FastAPI
@@ -45,7 +61,7 @@ open-housing-projet/
 - pytest
 - Docker / Docker Compose
 
-## Commandes utiles
+## Useful commands
 
 ```bash
 python -m venv .venv
@@ -57,5 +73,5 @@ pytest
 
 ## Phase
 
-- POC : validation technique du modèle et de l'API.
-- MVP : robustesse, validation des données, conteneurisation et automatisation.
+- POC: technical validation of the model and the API.
+- MVP: robustness, data validation, containerization, and automation.
