@@ -1,0 +1,21 @@
+__pycache__/
+*.py[cod]
+*.pkl
+*.joblib
+.ipynb_checkpoints/
+.env
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.DS_Store
+*.log
+# Project data
+/data/raw/*
+/data/processed/*
+/models/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!models/.gitkeep

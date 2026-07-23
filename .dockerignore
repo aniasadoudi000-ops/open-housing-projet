@@ -1,0 +1,11 @@
+__pycache__/
+.pytest_cache/
+.git/
+.venv/
+.ipynb_checkpoints/
+*.pyc
+*.pkl
+.DS_Store
+notebooks/
+
+# Keep only source and config files needed for runtime
