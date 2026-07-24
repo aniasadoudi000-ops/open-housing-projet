@@ -103,3 +103,4 @@ docker compose exec api python -m open_housing_mvp.train
 
 - POC: technical validation of the model (notebook only).
 - MVP: robustness, data validation, containerization, automation — in progress.
+# v2 test
