@@ -1,16 +1,12 @@
 from __future__ import annotations
 
-from pathlib import Path
+import os
 
-import joblib
-import pandas as pd
+import requests
 import streamlit as st
 
-from open_housing_mvp import config
-
-APP_ROOT = Path(__file__).resolve().parent
-MODEL_PATH = APP_ROOT / config.MODEL_PATH
-FEATURES_PATH = APP_ROOT / config.FEATURES_PATH
+API_URL = os.environ.get("API_URL", "http://localhost:8000").rstrip("/")
+API_KEY = os.environ.get("API_KEY", "")
 
 st.set_page_config(page_title="OpenHousing Prediction", page_icon="🏠", layout="centered")
 
@@ -51,7 +47,7 @@ st.markdown(
             background: linear-gradient(135deg, #0c6940, #1b8553);
             color: #ffffff;
         }
-        .stInfo, .stWarning, .stSuccess {
+        .stInfo, .stWarning, .stSuccess, .stError {
             border-radius: 10px;
         }
     </style>
@@ -60,11 +56,27 @@ st.markdown(
 )
 
 st.title("OpenHousing — House Price Predictor")
-st.caption("Choose the features you want to edit, then press the prediction button.")
+st.caption("Fill in every feature below, then press the prediction button.")
+st.caption(f"Calling API at: {API_URL}")
 
-model_available = MODEL_PATH.exists() and FEATURES_PATH.exists()
+# This app is a pure client of the FastAPI backend — it holds no model file
+# and does no prediction itself. Every /predict call goes over HTTP to the
+# deployed API, exactly like the architecture diagram: Client -> API.
+
+
+@st.cache_data(ttl=15)
+def check_api_health() -> tuple[bool, str]:
+    try:
+        response = requests.get(f"{API_URL}/health", timeout=5)
+        data = response.json()
+        return data.get("model_loaded", False), data.get("status", "unknown")
+    except requests.RequestException as exc:
+        return False, f"unreachable ({exc})"
+
+
+model_available, api_status = check_api_health()
 if not model_available:
-    st.warning("The model is not available yet. Run `python -m open_housing_mvp.train` first.")
+    st.warning(f"The API is not ready to predict (status: {api_status}).")
 
 feature_order = [
     "crim", "zn", "indus", "chas", "nox", "rm", "age",
@@ -103,26 +115,6 @@ FEATURE_DESCRIPTIONS = {
     "lstat": "Percentage of residents with lower socioeconomic status",
 }
 
-if model_available:
-    model = joblib.load(MODEL_PATH)
-    feature_order = joblib.load(FEATURES_PATH)
-
-feature_defaults = {
-    "crim": 0.00632,
-    "zn": 18.0,
-    "indus": 2.31,
-    "chas": 0,
-    "nox": 0.538,
-    "rm": 6.575,
-    "age": 65.2,
-    "dis": 4.09,
-    "rad": 1,
-    "tax": 296,
-    "ptratio": 15.3,
-    "b": 396.9,
-    "lstat": 4.98,
-}
-
 selected_features = st.multiselect(
     "Select the variables to use",
     options=feature_order,
@@ -135,12 +127,11 @@ if len(selected_features) == 0:
     st.info("Select all variables to enable prediction.")
 
 with st.form("prediction_form"):
-    values: dict[str, float | int] = {}
+    values: dict[str, float | int | None] = {}
     columns = st.columns(2)
 
     for idx, feature in enumerate(feature_order):
         col = columns[idx % 2]
-        default = feature_defaults.get(feature, 0.0)
 
         if feature in selected_features:
             label = FEATURE_LABELS.get(feature, feature)
@@ -150,17 +141,18 @@ with st.form("prediction_form"):
                 values[feature] = col.selectbox(
                     label,
                     options=[0, 1],
-                    index=int(default),
+                    index=None,
+                    placeholder="Choose 0 or 1",
                     key=f"input_{feature}",
                     help=help_text,
                 )
             else:
-                numeric_default = float(default)
                 values[feature] = col.number_input(
                     label,
-                    value=numeric_default,
+                    value=None,
                     min_value=0.0,
                     step=0.01,
+                    placeholder="Enter a value",
                     key=f"input_{feature}",
                     help=help_text,
                 )
@@ -168,13 +160,35 @@ with st.form("prediction_form"):
     submitted = st.form_submit_button(
         "Predict price",
         use_container_width=True,
-        disabled=not model_available or len(selected_features) == 0,
+        disabled=len(selected_features) == 0,
     )
 
-if submitted and model_available:
-    full_values = {feature: feature_defaults.get(feature, 0.0) for feature in feature_order}
-    full_values.update(values)
+if submitted:
+    missing = [f for f in selected_features if values.get(f) is None]
+    if missing:
+        missing_labels = ", ".join(FEATURE_LABELS.get(f, f) for f in missing)
+        st.error(f"Please fill in every field before predicting. Missing: {missing_labels}")
+    else:
+        full_values = {feature: 0.0 for feature in feature_order}
+        full_values.update(values)
+        payload = {feature: full_values[feature] for feature in feature_order}
 
-    row = pd.DataFrame([full_values])[feature_order]
-    predicted_price = float(model.predict(row)[0])
-    st.success(f"Estimated price: ${predicted_price:,.0f} USD")
+        try:
+            response = requests.post(
+                f"{API_URL}/predict",
+                json=payload,
+                headers={"X-API-Key": API_KEY},
+                timeout=10,
+            )
+        except requests.RequestException as exc:
+            st.error(f"Could not reach the API: {exc}")
+        else:
+            if response.status_code == 200:
+                predicted_price = response.json()["predicted_price"]
+                st.success(f"Estimated price: ${predicted_price:,.0f} USD")
+            elif response.status_code == 401:
+                st.error("API rejected the request: invalid or missing API key (check the API_KEY env var).")
+            elif response.status_code == 503:
+                st.error("The API's model is not loaded yet.")
+            else:
+                st.error(f"API error ({response.status_code}): {response.text}")
