@@ -11,17 +11,19 @@ dependencies = [
     "fastapi>=0.111",
     "uvicorn[standard]>=0.30",
     "pandas>=2.2",
+    "numpy>=1.26",
     "scikit-learn>=1.5",
     "joblib>=1.4",
     "pydantic>=2.8",
     "pytest>=8.2",
+    "httpx>=0.27",
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["mvp/tests"]
 
 [tool.setuptools]
-package-dir = {"" = "src"}
+package-dir = {"" = "mvp/src"}
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["mvp/src"]

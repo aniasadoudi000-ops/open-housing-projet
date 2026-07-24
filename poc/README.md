@@ -2,6 +2,7 @@
 **Phase:** Proof of Concept  
 **Goal:** Validate that a machine learning model can predict Boston Housing prices with acceptable accuracy (R² ≥ 0.80), and that the result can be exposed via a minimal FastAPI endpoint — fast, local, no production concerns.
 
+<<<<<<< HEAD
 > ⚠️ The POC is intentionally simple. No authentication, no docker-compose, no CI/CD, no data versioning. Those belong to the MVP phase.
 
 ---
@@ -169,3 +170,10 @@ curl -X POST http://localhost:8000/predict \
 | Data versioning (metadata.json) | MVP |
 | Logging middleware | MVP |
 | Cloud deployment | Final Product |
+=======
+Le POC est **uniquement** le notebook Jupyter : [`../notebooks/OpenHousing_POC_EN.ipynb`](../notebooks/OpenHousing_POC_EN.ipynb).
+
+Objectif : prouver la faisabilité technique — ETL (chargement, nettoyage, EDA) et comparaison de 4 modèles de régression (Linear Regression, Ridge, Random Forest, Gradient Boosting) — sans API, sans Docker, sans CI/CD à ce stade. Voir `BACKLOG_PRODUIT_v2.md` pour le détail des user stories couvertes (US-01, 02, 03, 07, 08, 09) et la Definition of Done spécifique à la phase POC.
+
+Ce dossier ne contient volontairement plus de code (`src/`, `tests/`) : l'ancien scaffold ici correspondait à une version antérieure du backlog où l'API faisait encore partie du scope POC. Depuis la correction du backlog, tout le code de production vit dans `mvp/`.
+>>>>>>> origin/DEV_Schama
