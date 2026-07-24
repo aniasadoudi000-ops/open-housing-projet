@@ -9,9 +9,13 @@ exécutable et testable :
 
 from __future__ import annotations
 
+import io
 import logging
+import ssl
 from pathlib import Path
+from urllib.request import Request, urlopen
 
+import certifi
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -39,7 +43,11 @@ class SchemaValidationError(Exception):
 def fetch_data(data_url: str = config.DATA_URL) -> pd.DataFrame:
     logger.info("Récupération du dataset depuis %s", data_url)
     try:
-        df = pd.read_csv(data_url)
+        ssl_context = ssl.create_default_context(cafile=certifi.where())
+        request = Request(data_url, headers={"User-Agent": "open-housing-projet/1.0"})
+        with urlopen(request, context=ssl_context) as response:
+            content = response.read()
+        df = pd.read_csv(io.BytesIO(content))
     except Exception as exc:  # noqa: BLE001 — on veut échouer bruyamment avec contexte
         raise RuntimeError(f"Impossible de récupérer le dataset depuis {data_url}: {exc}") from exc
     logger.info("Dataset récupéré : %d lignes, %d colonnes", *df.shape)

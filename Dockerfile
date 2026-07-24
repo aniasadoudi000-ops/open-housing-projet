@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl \
 
 COPY pyproject.toml ./
 COPY mvp/src ./mvp/src
+COPY models ./models
 
 RUN pip install --upgrade pip && pip install -e .
 
