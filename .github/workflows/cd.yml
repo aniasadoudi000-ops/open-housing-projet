@@ -1,14 +1,13 @@
 name: CD
 
 # CD ne se déclenche que sur `main` (pas sur DEV_Schama) : la branche de dev
-# fait tourner la CI seule, `main` déclenche la publication de l'image.
+# fait tourner la CI seule, `main` déclenche la publication de l'image ET
+# le redéploiement sur Render (US-20/US-21).
 #
-# LIMITE ASSUMÉE (US-20/US-21) : ce workflow build + push l'image Docker vers
-# GitHub Container Registry (ghcr.io), taguée `v<run_number>` pour permettre
-# un rollback (US-21 : redéployer le tag précédent). Il ne va PAS jusqu'au
-# déploiement sur un hébergeur cloud réel (Render/Railway/AWS/etc.) car
-# aucun compte cloud ni secret d'accès n'a été fourni pour ce projet. Ajouter
-# une étape de déploiement ici dès que la cible d'hébergement est choisie.
+# Le rollback (US-21) reste manuel et documenté : chaque image est taguée
+# `v<run_number>` en plus de `latest` sur GHCR — pour revenir en arrière,
+# redéployer manuellement le tag précédent depuis le dashboard Render
+# (Manual Deploy -> Deploy a specific image) ou via son Deploy Hook.
 
 on:
   push:
@@ -39,3 +38,12 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository }}:latest
             ghcr.io/${{ github.repository }}:v${{ github.run_number }}
+
+      - name: Deploy to Render
+        run: |
+          if [ -z "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" ]; then
+            echo "RENDER_DEPLOY_HOOK_URL secret is not set — skipping deploy trigger."
+            exit 1
+          fi
+          curl -f -s -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+          echo "Render deploy triggered."
